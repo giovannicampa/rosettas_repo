@@ -5,11 +5,13 @@ import tensorflow as tf
 import torch
 import torch.nn as nn
 
-from src.fcnn.pytorch.model import build_model_pt
-from src.fcnn.tensorflow.model import build_model_tf
-from src.utils.data_loader_pt import ImageDataset
+# from src.cnn.pytorch.model import build_model_pt
+from src.cnn.tensorflow.model import build_model_tf
+
+# from src.utils.data_loader_pt import ImageDataset
 from src.utils.data_loader_tf import DataGenerator
-from src.utils.trainer_pt import ModelTrainerPT
+
+# from src.utils.trainer_pt import ModelTrainerPT
 from src.utils.trainer_tf import ModelTrainerTF
 
 if __name__ == "__main__":
@@ -49,17 +51,17 @@ if __name__ == "__main__":
         batch_size=batch_size,
     )
 
-    # Train pytorch model
-    model_pt = build_model_pt(input_size=(img_size, img_size), num_classes=num_classes)
-    optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
-    trainer_pt = ModelTrainerPT(
-        model=model_pt, criterion=nn.CrossEntropyLoss(), optimizer=optimizer_pt
-    )
-    generator = ImageDataset(
-        image_filenames=images,
-        labels=labels,
-        batch_size=batch_size,
-        dim=(img_size, img_size),
-    )
+    # # Train pytorch model
+    # model_pt = build_model_pt(input_size=(img_size, img_size), num_classes=num_classes)
+    # optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
+    # trainer_pt = ModelTrainerPT(
+    #     model=model_pt, criterion=nn.CrossEntropyLoss(), optimizer=optimizer_pt
+    # )
+    # generator = ImageDataset(
+    #     image_filenames=images,
+    #     labels=labels,
+    #     batch_size=batch_size,
+    #     dim=(img_size, img_size),
+    # )
 
-    trainer_pt.train(generator, epochs=nr_epochs)
+    # trainer_pt.train(generator, epochs=nr_epochs)
