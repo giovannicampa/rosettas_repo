@@ -17,3 +17,4 @@ repos:
     rev: v5.10.1  # Use the latest version available
     hooks:
       - id: isort
+        args: ["--profile", "black"]
