@@ -4,7 +4,7 @@ import argparse
 def train_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model-type",
+        "--model-types",
         type=str,
         required=True,
         choices=["tensorflow", "pytorch"],
