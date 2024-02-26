@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 
 from src.fcnn.pytorch.model import build_model_pt
 from src.fcnn.tensorflow.model import build_model_tf
@@ -65,8 +66,9 @@ if __name__ == "__main__":
         generator = ImageDataset(
             image_filenames=images,
             labels=labels,
-            batch_size=batch_size,
             dim=(img_size, img_size),
         )
 
-        trainer_pt.train(generator, epochs=nr_epochs)
+        dataloader = DataLoader(generator, batch_size=2, shuffle=True)
+
+        trainer_pt.train(dataloader, epochs=nr_epochs)
