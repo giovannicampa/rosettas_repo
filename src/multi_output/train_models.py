@@ -3,11 +3,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-# from src.utils.data_loader_pt import ImageDataset
+from src.multi_output.pytorch.model import build_model_pt
 from src.multi_output.tensorflow.data_loader import MultiOutputDataGenerator
-
-# from src.multi_output.pytorch.model import build_model_pt
 from src.multi_output.tensorflow.model import build_model_tf
+from src.utils.data_loader_pt import ImageDataset
 from src.utils.dataset_housing_to_df import load_dataset
 from src.utils.trainer_args_parser import train_args_parser
 from src.utils.trainer_pt import ModelTrainerPT
@@ -33,7 +32,9 @@ if __name__ == "__main__":
 
     if "tensorflow" in args.model_types:
         # Train keras model
-        model_tf = build_model_tf(input_size=(img_size, img_size, 3), features=features)
+        model_tf = build_model_tf(
+            input_shape=(img_size, img_size, 3), features=features
+        )
         optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
         trainer_tf = ModelTrainerTF(
             model=model_tf,
@@ -56,18 +57,20 @@ if __name__ == "__main__":
             batch_size=batch_size,
         )
 
-    # if "pytorch" in args.model_types:
-    #     # Train pytorch model
-    #     model_pt = build_model_pt(num_classes=num_classes)
-    #     optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
-    #     trainer_pt = ModelTrainerPT(
-    #         model=model_pt, criterion=nn.CrossEntropyLoss(), optimizer=optimizer_pt
-    #     )
-    #     generator = ImageDataset(
-    #         image_filenames=images,
-    #         labels=labels,
-    #         dim=(img_size, img_size),
-    #     )
-    #     dataloader = DataLoader(generator, batch_size=2, shuffle=True)
+    if "pytorch" in args.model_types:
+        # Train pytorch model
+        model_pt = build_model_pt(
+            input_shape=(img_size, img_size, 3), features=features
+        )
+        optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
+        trainer_pt = ModelTrainerPT(
+            model=model_pt, criterion=nn.CrossEntropyLoss(), optimizer=optimizer_pt
+        )
+        generator = ImageDataset(
+            image_filenames=images,
+            labels=labels,
+            dim=(img_size, img_size),
+        )
+        dataloader = DataLoader(generator, batch_size=2, shuffle=True)
 
-    #     trainer_pt.train(dataloader, epochs=nr_epochs)
+        trainer_pt.train(dataloader, epochs=nr_epochs)
