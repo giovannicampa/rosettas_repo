@@ -3,13 +3,13 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+from src.multi_output.pytorch.data_loader import MultiOutputDataGeneratorPT
 from src.multi_output.pytorch.model import build_model_pt
-from src.multi_output.tensorflow.data_loader import MultiOutputDataGenerator
+from src.multi_output.pytorch.trainer_pt import ModelTrainerPT
+from src.multi_output.tensorflow.data_loader import MultiOutputDataGeneratorTF
 from src.multi_output.tensorflow.model import build_model_tf
-from src.utils.data_loader_pt import ImageDataset
 from src.utils.dataset_housing_to_df import load_dataset
 from src.utils.trainer_args_parser import train_args_parser
-from src.utils.trainer_pt import ModelTrainerPT
 from src.utils.trainer_tf import ModelTrainerTF
 
 if __name__ == "__main__":
@@ -24,10 +24,26 @@ if __name__ == "__main__":
     dataframe = load_dataset()
 
     features = {
-        "nr_bedrooms": {"type": int, "loss": "mean_squared_error"},
-        "nr_bathrooms": {"type": int, "loss": "mean_squared_error"},
-        "area": {"type": float, "loss": "mean_squared_error"},
-        "price": {"type": float, "loss": "mean_squared_error"},
+        "nr_bedrooms": {
+            "type": int,
+            "loss_tf": "mean_squared_error",
+            "loss_pt": nn.MSELoss(),
+        },
+        "nr_bathrooms": {
+            "type": int,
+            "loss_tf": "mean_squared_error",
+            "loss_pt": nn.MSELoss(),
+        },
+        "area": {
+            "type": float,
+            "loss_tf": "mean_squared_error",
+            "loss_pt": nn.MSELoss(),
+        },
+        "price": {
+            "type": float,
+            "loss_tf": "mean_squared_error",
+            "loss_pt": nn.MSELoss(),
+        },
     }
 
     if "tensorflow" in args.model_types:
@@ -38,12 +54,12 @@ if __name__ == "__main__":
         optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
         trainer_tf = ModelTrainerTF(
             model=model_tf,
-            loss={feature: val["loss"] for feature, val in features.items()},
+            loss={feature: val["loss_tf"] for feature, val in features.items()},
             optimizer=optimizer_tf,
         )
 
         batch_size = 32
-        generator_tf = MultiOutputDataGenerator(
+        generator_tf = MultiOutputDataGeneratorTF(
             dataframe,
             features.keys(),
             batch_size,
@@ -64,12 +80,15 @@ if __name__ == "__main__":
         )
         optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
         trainer_pt = ModelTrainerPT(
-            model=model_pt, criterion=nn.CrossEntropyLoss(), optimizer=optimizer_pt
+            model=model_pt,
+            criteria={val["loss_pt"] for _, val in features.items()},
+            optimizer=optimizer_pt,
         )
-        generator = ImageDataset(
-            image_filenames=images,
-            labels=labels,
-            dim=(img_size, img_size),
+        generator = MultiOutputDataGeneratorPT(
+            dataframe,
+            features.keys(),
+            img_size,
+            image_column_name="image_path_frontal",
         )
         dataloader = DataLoader(generator, batch_size=2, shuffle=True)
 

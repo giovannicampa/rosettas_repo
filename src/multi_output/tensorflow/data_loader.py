@@ -8,7 +8,7 @@ Code from: https://towardsdatascience.com/building-a-multi-output-convolutional-
 """
 
 
-class MultiOutputDataGenerator(Sequence):
+class MultiOutputDataGeneratorTF(Sequence):
     def __init__(
         self,
         dataframe,

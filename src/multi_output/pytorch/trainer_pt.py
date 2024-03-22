@@ -1,0 +1,110 @@
+from typing import Any, Dict, List, Union
+
+import torch
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+
+from src.utils.trainer_base import ModelTrainerBase
+
+
+class ModelTrainerPT(ModelTrainerBase):
+    """Wraps a PyTorch model for training with convenient methods."""
+
+    def __init__(
+        self,
+        model: torch.nn.Module,
+        criteria: torch.nn.Module,
+        optimizer: torch.optim.Optimizer,
+        metrics: List[Any] = None,
+    ) -> None:
+        self.model = model
+        self.criteria = criteria
+        self.optimizer = optimizer
+        self.metrics = metrics
+
+    def train(
+        self,
+        train_loader: torch.utils.data.DataLoader,
+        epochs: int,
+        device: str = "cpu",
+    ) -> None:
+        """Trains the model on provided training data loader."""
+        self.model.to(device)
+
+        # Puts model in training mode (Enables Dropout Layers...)
+        self.model.train()
+
+        for epoch in range(epochs):
+
+            for batch_idx, (features, multi_labels) in enumerate(train_loader):
+                features = features.to(device)
+                multi_labels = [
+                    label.to(device) for label in multi_labels
+                ]  # Assuming multi_labels is a list of tensors
+
+                # This squeezes the dimension of size 1
+                multi_labels = torch.stack(multi_labels).squeeze(1)
+                multi_labels = multi_labels.transpose(0, 1)
+
+                # Forward pass
+                self.optimizer.zero_grad()
+                multi_outputs = self.model(features)
+
+                # Assuming you have a list of loss functions corresponding to each task
+                # For example, self.criterion = [loss_fn1, loss_fn2, ...]
+                total_loss = 0
+                for output, label, criterion in zip(
+                    multi_outputs.transpose(1, 0), multi_labels, self.criteria
+                ):
+                    loss = criterion(output, label)
+                    total_loss += loss
+
+                print(total_loss)
+
+                # Backward pass and optimize
+                total_loss.backward()
+                self.optimizer.step()
+
+    def evaluate(self, test_loader: torch.utils.data.DataLoader, device: str = "cpu"):
+        self.model.eval()  # Set the model to evaluation mode
+        total_loss = 0.0
+        total_samples = 0
+
+        self.model.to(device)
+
+        for batch_idx, (features, multi_labels) in enumerate(test_loader):
+            features = features.to(device)
+            multi_labels = [
+                label.to(device) for label in multi_labels
+            ]  # Assuming multi_labels is a list of tensors
+
+            # This squeezes the dimension of size 1
+            multi_labels = torch.stack(multi_labels).squeeze(1)
+            multi_labels = multi_labels.transpose(0, 1)
+
+            # Forward pass
+            self.optimizer.zero_grad()
+            multi_outputs = self.model(features)
+            total_samples += multi_outputs.shape[0]
+
+            for output, label, criterion in zip(
+                multi_outputs.transpose(1, 0), multi_labels, self.criteria
+            ):
+                loss = criterion(output, label)
+                total_loss += loss
+
+        average_loss = total_loss / total_samples
+        return average_loss
+
+    def predict(
+        self, data_loader: torch.utils.data.DataLoader, device: str = "cpu"
+    ) -> List[Any]:
+        """Predicts on new data using the trained model."""
+        self.model.eval()
+        predictions: List[Any] = []
+
+        with torch.no_grad():
+            for batch_idx, (features, multi_labels) in enumerate(data_loader):
+                features = features.to(device)
+                predictions.extend(self.model(features).cpu().tolist())
+
+        return predictions
