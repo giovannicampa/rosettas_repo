@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Union
+from abc import abstractmethod
+from typing import Any, List
 
 import torch
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 
+from src.utils.model_types import ModelType
 from src.utils.trainer_base import ModelTrainerBase
 
 
@@ -11,15 +12,22 @@ class ModelTrainerPT(ModelTrainerBase):
 
     def __init__(
         self,
-        model: torch.nn.Module,
-        criterion: torch.nn.Module,
-        optimizer: torch.optim.Optimizer,
+        model: torch.nn.Module = None,
+        criterion: torch.nn.Module = None,
+        optimizer: torch.optim.Optimizer = None,
         metrics: List[Any] = None,
+        model_type: ModelType = ModelType.CLASSIFIER,
+        experiment_name: str = "model_name",
+        run_name: str = "pytorch",
     ) -> None:
+        if run_name is None:
+            run_name = "pytorch"
+        super(ModelTrainerPT, self).__init__(experiment_name=experiment_name, run_name=run_name, model_type=model_type)
         self.model = model
         self.criterion = criterion
         self.optimizer = optimizer
         self.metrics = metrics
+        self.model_type = model_type
 
     def train(
         self,
@@ -40,64 +48,23 @@ class ModelTrainerPT(ModelTrainerBase):
                 # Forward pass
                 self.optimizer.zero_grad()
                 outputs = self.model(features)
-                loss = self.criterion(outputs, labels)
-                print(loss)
+                loss = self.calculate_loss(features, labels, outputs)
+                if batch_idx == 0:
+                    self.log_results(epoch, loss, features, labels, outputs)
 
                 # Backward and optimize
                 loss.backward()
                 self.optimizer.step()
 
-    def evaluate(
-        self, test_loader: torch.utils.data.DataLoader, device: str = "cpu"
-    ) -> Dict[str, Union[float, torch.Tensor]]:
-        """Evaluates the model on provided test data loader."""
-        self.model.eval()
+    @abstractmethod
+    def calculate_loss(self, features, labels, outputs):
+        pass
 
-        total_correct = 0
-        total_samples = 0
-        all_labels = []
-        all_preds = []
+    @abstractmethod
+    def log_results(self, epoch, loss, features, labels, outputs):
+        pass
 
-        with torch.no_grad():
-            for features, labels in test_loader:
-                features, labels = features.to(device), labels.to(device)
-                outputs = self.model(features)
-
-                _, predicted = torch.max(outputs.data, 1)
-                total_samples += labels.size(0)
-                total_correct += (predicted == labels).sum().item()
-
-                # Store predictions and labels for further metrics calculation
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(predicted.cpu().numpy())
-
-                # Calculate and accumulate evaluation metrics
-
-        # Calculate accuracy
-        accuracy = total_correct / total_samples
-
-        # Calculate precision, recall, and F1 score using sklearn
-        precision = precision_score(all_labels, all_preds, average="weighted")
-        recall = recall_score(all_labels, all_preds, average="weighted")
-        f1 = f1_score(all_labels, all_preds, average="weighted")
-
-        # Calculate confusion matrix
-        conf_matrix = confusion_matrix(all_labels, all_preds)
-
-        # Store metrics in the dictionary
-        metrics = {
-            "accuracy": accuracy,
-            "precision": precision,
-            "recall": recall,
-            "f1_score": f1,
-            "confusion_matrix": conf_matrix,
-        }
-
-        return metrics
-
-    def predict(
-        self, data_loader: torch.utils.data.DataLoader, device: str = "cpu"
-    ) -> List[Any]:
+    def predict(self, data_loader: torch.utils.data.DataLoader, device: str = "cpu") -> List[Any]:
         """Predicts on new data using the trained model."""
         self.model.eval()
         predictions: List[Any] = []

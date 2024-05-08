@@ -5,10 +5,11 @@ from torch.utils.data import DataLoader
 
 from src.multi_output.pytorch.data_loader import MultiOutputDataGeneratorPT
 from src.multi_output.pytorch.model import build_model_pt
-from src.multi_output.pytorch.trainer_pt import ModelTrainerPT
+from src.multi_output.pytorch.trainer_pt import ModelTrainerPTMultiOutput
 from src.multi_output.tensorflow.data_loader import MultiOutputDataGeneratorTF
 from src.multi_output.tensorflow.model import build_model_tf
 from src.utils.dataset_housing_to_df import load_dataset
+from src.utils.model_types import ModelType
 from src.utils.trainer_args_parser import train_args_parser
 from src.utils.trainer_tf import ModelTrainerTF
 
@@ -48,14 +49,14 @@ if __name__ == "__main__":
 
     if "tensorflow" in args.model_types:
         # Train keras model
-        model_tf = build_model_tf(
-            input_shape=(img_size, img_size, 3), features=features
-        )
+        model_tf = build_model_tf(input_shape=(img_size, img_size, 3), features=features)
         optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
         trainer_tf = ModelTrainerTF(
             model=model_tf,
             loss={feature: val["loss_tf"] for feature, val in features.items()},
             optimizer=optimizer_tf,
+            model_type=ModelType.CLASSIFIER,
+            experiment_name="multi_output",
         )
 
         batch_size = 32
@@ -75,14 +76,15 @@ if __name__ == "__main__":
 
     if "pytorch" in args.model_types:
         # Train pytorch model
-        model_pt = build_model_pt(
-            input_shape=(img_size, img_size, 3), features=features
-        )
+        model_pt = build_model_pt(input_shape=(img_size, img_size, 3), features=features)
         optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
-        trainer_pt = ModelTrainerPT(
+        trainer_pt = ModelTrainerPTMultiOutput(
             model=model_pt,
             criteria={val["loss_pt"] for _, val in features.items()},
             optimizer=optimizer_pt,
+            experiment_name="multi_output",
+            run_name="pytorch",
+            model_type=ModelType.CLASSIFIER,
         )
         generator = MultiOutputDataGeneratorPT(
             dataframe,

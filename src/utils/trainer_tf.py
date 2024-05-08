@@ -3,6 +3,7 @@ from typing import Dict, List
 import numpy as np
 import tensorflow as tf
 
+from src.utils.model_types import ModelType
 from src.utils.trainer_base import ModelTrainerBase
 
 
@@ -23,7 +24,13 @@ class ModelTrainerTF(ModelTrainerBase):
         loss: tf.keras.losses.Loss,
         optimizer: tf.keras.optimizers.Optimizer,
         metrics: List[tf.keras.metrics.Metric] = None,
+        model_type: ModelType = ModelType.CLASSIFIER,
+        experiment_name: str = None,
+        run_name: str = "tensorflow",
     ) -> None:
+        if run_name is None:
+            run_name = "tensorflow"
+        super(ModelTrainerTF, self).__init__(experiment_name, run_name, model_type)
         self.model = model
         self.loss = loss
         self.optimizer = optimizer
@@ -33,9 +40,7 @@ class ModelTrainerTF(ModelTrainerBase):
         """
         Compiles the model for training with specified loss, optimizer, and metrics.
         """
-        self.model.compile(
-            loss=self.loss, optimizer=self.optimizer, metrics=self.metrics
-        )
+        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.metrics)
 
     def train(
         self,
