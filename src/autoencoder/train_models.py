@@ -7,10 +7,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from src.autoencoder.pytorch.model import build_model_pt
-
-# from src.autoencoder.tensorflow.model import build_model_tf
+from src.autoencoder.tensorflow.model import build_model_tf
 from src.utils.data_loader_pt import ImageDataset
-from src.utils.data_loader_tf import DataGenerator
+from src.utils.data_loader_tf_generator import DataGeneratorTFGenerator
 from src.utils.model_types import ModelType
 from src.utils.trainer_args_parser import train_args_parser
 from src.utils.trainer_pt_generator import ModelTrainerGeneratorPT
@@ -32,29 +31,26 @@ if __name__ == "__main__":
     labels = [image.split("/")[-1].split("_")[1].split(".")[0] for image in images]
     num_classes = len(np.unique(labels))
 
-    # if "tensorflow" in args.model_types:
-    #     # Train keras model
-    #     model_tf = build_model_tf(
-    #         input_size=(img_size, img_size, 1), num_classes=num_classes
-    #     )
-    #     optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
-    #     trainer_tf = ModelTrainerTF(
-    #         model=model_tf,
-    #         loss=tf.keras.losses.categorical_crossentropy,
-    #         optimizer=optimizer_tf,
-    #     )
-    #     generator_tf = DataGenerator(
-    #         image_filenames=images,
-    #         labels=labels,
-    #         n_classes=num_classes,
-    #         batch_size=batch_size,
-    #         dim=(img_size, img_size),
-    #     )
-    #     trainer_tf.train(
-    #         train_data=generator_tf,
-    #         epochs=nr_epochs,
-    #         batch_size=batch_size,
-    #     )
+    if "tensorflow" in args.model_types:
+        # Train keras model
+        model_tf = build_model_tf()
+        optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
+        trainer_tf = ModelTrainerTF(
+            model=model_tf,
+            loss=tf.keras.losses.categorical_crossentropy,
+            optimizer=optimizer_tf,
+            experiment_name="autoencoder",
+        )
+        generator_tf = DataGeneratorTFGenerator(
+            image_filenames=images,
+            batch_size=batch_size,
+            dim=(img_size, img_size),
+        )
+        trainer_tf.train(
+            train_data=generator_tf,
+            epochs=nr_epochs,
+            batch_size=batch_size,
+        )
 
     if "pytorch" in args.model_types:
         # Train pytorch model
