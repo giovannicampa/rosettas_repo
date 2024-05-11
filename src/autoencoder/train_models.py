@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     args = train_args_parser()
 
-    img_size = 28
+    img_size = 224
     nr_epochs = args.nr_epochs
     batch_size = args.batch_size
     learning_rate = args.learning_rate
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     if "pytorch" in args.model_types:
         # Train pytorch model
-        model_pt = build_model_pt()
+        model_pt = build_model_pt(input_size=img_size)
         optimizer_pt = torch.optim.Adam(model_pt.parameters(), lr=learning_rate)
         trainer_pt = ModelTrainerGeneratorPT(
             model=model_pt,
