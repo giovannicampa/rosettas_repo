@@ -37,7 +37,7 @@ if __name__ == "__main__":
         optimizer_tf = tf.keras.optimizers.Adam(learning_rate)
         trainer_tf = ModelTrainerTF(
             model=model_tf,
-            loss=tf.keras.losses.categorical_crossentropy,
+            loss=tf.keras.losses.MeanSquaredError(),
             optimizer=optimizer_tf,
             experiment_name="autoencoder",
         )
