@@ -30,7 +30,7 @@ def calculate_params_conv_t(input_size: int, output_size: int, kernel_sizes: Lis
                 continue
             for padding in common_padding:
                 for padding_out in common_padding:
-                    if padding_out > stride:
+                    if padding_out >= stride:
                         continue
                     calculated_output = (input_size - 1) * stride - 2 * padding + kernel_size + padding_out
                     if calculated_output == output_size:
