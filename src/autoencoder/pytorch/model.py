@@ -70,7 +70,11 @@ class Autoencoder(nn.Module):
                 ),
             )
             self.decoder.add_module(f"batch_norm{i}", nn.BatchNorm2d(next_channels))
-            self.decoder.add_module(f"relu{i}", nn.ReLU(inplace=True))
+
+            if i == 0:
+                self.decoder.add_module(f"sigmoid{i}", nn.Sigmoid())
+            else:
+                self.decoder.add_module(f"relu{i}", nn.ReLU(inplace=True))
             current_channels = next_channels
 
     def forward(self, x):
@@ -81,7 +85,7 @@ class Autoencoder(nn.Module):
 
 def build_model_pt(input_size=224):
 
-    return Autoencoder(input_size=224)
+    return Autoencoder(input_size=input_size)
 
 
 if __name__ == "__main__":
