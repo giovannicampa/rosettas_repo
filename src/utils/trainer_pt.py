@@ -69,7 +69,7 @@ class ModelTrainerPT(ModelTrainerBase):
         self.model.eval()
         predictions: List[Any] = []
 
-        with torch.no_grad():
+        with torch.inference_mode():
             for features in data_loader:
                 features = features.to(device)
                 predictions.extend(self.model(features).cpu().tolist())

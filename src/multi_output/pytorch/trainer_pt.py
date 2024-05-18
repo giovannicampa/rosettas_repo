@@ -73,25 +73,27 @@ class ModelTrainerPTMultiOutput(ModelTrainerPT):
         total_samples = 0
 
         self.model.to(device)
+        with torch.inference_mode():
+            for batch_idx, (features, multi_labels) in enumerate(test_loader):
+                features = features.to(device)
+                multi_labels = [
+                    label.to(device) for label in multi_labels
+                ]  # Assuming multi_labels is a list of tensors
 
-        for batch_idx, (features, multi_labels) in enumerate(test_loader):
-            features = features.to(device)
-            multi_labels = [label.to(device) for label in multi_labels]  # Assuming multi_labels is a list of tensors
+                # This squeezes the dimension of size 1
+                multi_labels = torch.stack(multi_labels).squeeze(1)
+                multi_labels = multi_labels.transpose(0, 1)
 
-            # This squeezes the dimension of size 1
-            multi_labels = torch.stack(multi_labels).squeeze(1)
-            multi_labels = multi_labels.transpose(0, 1)
+                # Forward pass
+                self.optimizer.zero_grad()
+                multi_outputs = self.model(features)
+                total_samples += multi_outputs.shape[0]
 
-            # Forward pass
-            self.optimizer.zero_grad()
-            multi_outputs = self.model(features)
-            total_samples += multi_outputs.shape[0]
+                for output, label, criterion in zip(multi_outputs.transpose(1, 0), multi_labels, self.criteria):
+                    loss = criterion(output, label)
+                    total_loss += loss
 
-            for output, label, criterion in zip(multi_outputs.transpose(1, 0), multi_labels, self.criteria):
-                loss = criterion(output, label)
-                total_loss += loss
-
-        average_loss = total_loss / total_samples
+            average_loss = total_loss / total_samples
         return average_loss
 
     def predict(self, data_loader: torch.utils.data.DataLoader, device: str = "cpu") -> List[Any]:
@@ -99,7 +101,7 @@ class ModelTrainerPTMultiOutput(ModelTrainerPT):
         self.model.eval()
         predictions: List[Any] = []
 
-        with torch.no_grad():
+        with torch.inference_mode():
             for batch_idx, (features, multi_labels) in enumerate(data_loader):
                 features = features.to(device)
                 predictions.extend(self.model(features).cpu().tolist())

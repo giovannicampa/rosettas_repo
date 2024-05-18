@@ -42,7 +42,7 @@ class ModelTrainerClassifierPT(ModelTrainerPT):
         all_labels = []
         all_preds = []
 
-        with torch.no_grad():
+        with torch.inference_mode():
             for features, labels in test_loader:
                 features, labels = features.to(device), labels.to(device)
                 outputs = self.model(features)
